@@ -49,6 +49,7 @@ copy_mask = mask
 # print(sepindex[0])
 # =============================================================================
 #%%
+
 '''
 NOTE: Indices are reversed:
     Takes form of [y, x]
@@ -90,7 +91,7 @@ for i in range(4611):
                 indices = []
                 print('pixvalue:', len(pix_value))
                 for k in range(len(pix_value)):
-                    print(k)
+                    #print(k)
                     if k == len(pix_value):
                         break
                     pv = pix_value[k]
@@ -99,8 +100,8 @@ for i in range(4611):
                     y = pi[0]
                     radius = Circle(x, y, x0, y0)
                     #print(k)
-                    print('pixvalue before:', len(pix_value), 'and pi:', pi)
-                    if radius >= r1 and radius <= r2: # Check if pixel is within background aperture
+                    #print('pixvalue before:', len(pix_value), 'and pi:', pi)
+                    if radius > r1 and radius <= r2: # Check if pixel is within background aperture
                         bg_aperture.append(pv)
                         bg_indices.append(pi)
                         pix_value.pop(k) # Remove pixel and its indices from list
@@ -111,7 +112,7 @@ for i in range(4611):
                         indices.append(pi)
                         pix_value.pop(k) # Remove pixel and its indices from list
                         pix_pos.pop(k)
-                        print('new pixvalue:', len(pix_value), 'and pi:', pi)
+                        print('new pixvalue:', len(pix_value), 'and pi:', pi, 'and pv:', pv)
                     
                 #print('new pixvalue:', len(pix_value), 'and max value:', max_value)
                 if len(bg_aperture) == 0:
@@ -122,6 +123,7 @@ for i in range(4611):
                     f.close()
                     file = open('Index/index'+fileindex, 'x')
                     np.savetxt(file, indices)
+                    file.close()
                     for ind in range(len(indices)):
                         pixind = pix_pos[ind]
                         xpos = pixind[1]
@@ -129,3 +131,6 @@ for i in range(4611):
                         mask[ypos][xpos] = 0 # Change value in pixel position in mask to 0
                 else:
                     continue
+#%%
+print(max(pix_value))
+file.close()
