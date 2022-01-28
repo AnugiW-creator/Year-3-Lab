@@ -1,0 +1,232 @@
+from astropy.table import Table
+from astropy.io import fits
+import astropy.cosmology as cosmo
+from astropy.units import quantity
+import scipy as sp
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+hdulist = fits.open(r'C:\Users\anugi\OneDrive\Documents\Physics\Year 3\Labs\Astronomical Image Processing\A1_mosaic\A1_mosaic.fits')
+#%%
+pixel = hdulist[0].data
+print(pixel[0])
+
+columns = len(pixel[0])
+rows = len(pixel)
+all_pixels = []
+for i in range(rows):
+    pix_arr = pixel[i]
+    for j in range(columns):
+        all_pixels.append(pix_arr[j])
+print(all_pixels)
+
+plt.hist(all_pixels, bins=900, color='deeppink')
+plt.show()
+#%%
+############# LOAD REGIONS TO BE MASKED FOR LEFT SIDE OF IMAGE ################
+x, y, width, height, z = sp.loadtxt('C:/Users/anugi/OneDrive/Documents/Physics/Year 3/Labs/Astronomical Image Processing/left_regions.txt', dtype=str, unpack=True)
+print(x)
+print(width)
+print(height)
+
+########### DO LEFT SIDE ##############
+mask = np.ones((4611,2570)) # Create mask of 1s to indicate valid objects and background
+
+for k in range(len(x)):
+    xcentrefloat = float(x[k])
+    ycentrefloat = float(y[k])
+    widthfloat = float(width[k])
+    heightfloat = float(height[k])
+    #widthfloat = width[k]
+    #heightfloat = height[k]
+    xcentre = int(xcentrefloat) - 1
+    ycentre = int(ycentrefloat) - 1
+    width1 = (int(widthfloat) + 1)/2
+    height1 = (int(heightfloat) + 1)/2    
+    widthedge1 = xcentre - width1
+    widthedge2 = xcentre + width1
+    heightedge1 = ycentre - height1
+    heightedge2 = ycentre + height1
+    for i in range (4611):
+        for j in range (2570):
+            if i >= heightedge1 and i <=heightedge2:
+                if j >= widthedge1 and j <= widthedge2:
+                    mask[i][j] = 0
+print(mask)
+#yote = mask[0]
+
+####################### LOAD REGIONS FOR RIGHT SIDE ####################
+x, y, width, height, z = sp.loadtxt('C:/Users/anugi/OneDrive/Documents/Physics/Year 3/Labs/Astronomical Image Processing/mask_1.txt', dtype=str, unpack=True)
+print(x)
+print(width)
+print(height)
+
+############## DO RIGHT SIDE ###############
+for k in range(len(x)):
+    xcentrefloat = float(x[k])
+    ycentrefloat = float(y[k])
+    widthfloat = float(width[k])
+    heightfloat = float(height[k])
+    #widthfloat = width[k]
+    #heightfloat = height[k]
+    xcentre = int(xcentrefloat) - 1
+    ycentre = int(ycentrefloat) - 1
+    width1 = (int(widthfloat) + 1)/2
+    height1 = (int(heightfloat) + 1)/2    
+    widthedge1 = xcentre - width1
+    widthedge2 = xcentre + width1
+    heightedge1 = ycentre - height1
+    heightedge2 = ycentre + height1
+    for i in range (4611):
+        for j in range (2570):
+            if i >= heightedge1 and i <=heightedge2:
+                if j >= widthedge1 and j <= widthedge2:
+                    mask[i][j] = 0
+print(mask)
+
+############# LOAD EDGES #######################
+x, y, width, height, z = sp.loadtxt('C:/Users/anugi/OneDrive/Documents/Physics/Year 3/Labs/Astronomical Image Processing/mask_3.txt', dtype=str, unpack=True)
+print(x)
+print(width)
+print(height)
+
+############## EDGES ###############
+for k in range(len(x)):
+    xcentrefloat = float(x[k])
+    ycentrefloat = float(y[k])
+    widthfloat = float(width[k])
+    heightfloat = float(height[k])
+    #widthfloat = width[k]
+    #heightfloat = height[k]
+    xcentre = int(xcentrefloat) - 1
+    ycentre = int(ycentrefloat) - 1
+    width1 = (int(widthfloat) + 1)/2
+    height1 = (int(heightfloat) + 1)/2    
+    widthedge1 = xcentre - width1
+    widthedge2 = xcentre + width1
+    heightedge1 = ycentre - height1
+    heightedge2 = ycentre + height1
+    for i in range (4611):
+        for j in range (2570):
+            if i >= heightedge1 and i <=heightedge2:
+                if j >= widthedge1 and j <= widthedge2:
+                    mask[i][j] = 0
+print(mask)
+#%%
+
+###### Choose to cut off background from 3500 #######
+################## CUT OFF BACKGROUND #######################
+
+for i in range(4611):
+    for j in range(2570): # For loop through whole image
+        # girl what the fuck
+        impix = pixel[i][j] # Assign variable to pixel
+        if impix <= 3500: # Exclude values below chosen background
+            mask[i][j] = 0 # Change 1 to 0
+print(mask)
+######################### FINDING THE SOURCES #####################
+pix_value = []
+pix_pos = []
+for i in range(4611):
+    for j in range(2570):
+        impix = pixel[i][j]
+        maskpix = mask[i][j]
+        if maskpix == 1:
+            pix_value.append(impix)
+            pix_pos.append(([i,j]))
+copy_pixvalue = pix_value
+copy_pixpos = pix_pos
+copy_mask = mask
+#%%
+
+'''
+NOTE: Indices are reversed:
+    Takes form of [y, x]
+'''
+pix_value = copy_pixvalue
+pix_pos = copy_pixpos
+############# DEFINE CIRCLE AND ELLIPSE ############
+def Circle(x, y, x0, y0):
+    r = ((x - x0)**2 + (y - y0)**2)**(1/2)
+    return r
+
+def Ellipse(x, y, x0, y0, a, b):
+    one = ((x - x0)**2)/(a**2) + ((y - y0)**2)/(b**2)
+    return one
+
+################## FIND SMALLEST SOURCES ###############
+sources = []
+
+for i in range(4611):
+    for j in range(2570):
+        impix = pixel[i][j]
+        maskpix = mask[i][j]
+        index = [i, j]
+        if maskpix == 1:
+            #print(index)
+        #if j == 700 and i == 350:
+            #break
+            max_value = max(pix_value)
+            max_index = pix_value.index(max_value) # Find index 
+            sepindex = pix_pos[max_index] # make sure index of value in loop matches brightest pixel
+            if sepindex == index:
+                x0 = sepindex[1] # Separate x and y coordinates
+                y0 = sepindex[0]
+                r1 = 10.5 # Choose aperture radius from region file containing radius of brightest source
+                r2 = 16 # Choose bg aperture size
+                bg_aperture = []
+                aperture = []
+                bg_indices = []
+                indices = []
+                print('pixvalue:', len(pix_value))
+                for k in range(len(pix_value)):
+                    #print(k)
+                    if k == len(pix_value):
+                        break
+                    pv = pix_value[k]
+                    pi = pix_pos[k]
+                    x = pi[1]
+                    y = pi[0]
+                    radius = Circle(x, y, x0, y0)
+                    #print(k)
+                    #print('pixvalue before:', len(pix_value), 'and pi:', pi)
+                    if radius > r1 and radius <= r2: # Check if pixel is within background aperture
+                        bg_aperture.append(pv)
+                        bg_indices.append(pi)
+                        pix_value.pop(k) # Remove pixel and its indices from list
+                        pix_pos.pop(k)
+                        print('new pixvalue, bg:', len(pix_value))
+                    elif radius <= r1: # Check if pixel is in main aperture (part of the source)
+                        aperture.append(pv)
+                        indices.append(pi)
+                        pix_value.pop(k) # Remove pixel and its indices from list
+                        pix_pos.pop(k)
+                        print('new pixvalue:', len(pix_value), 'and pi:', pi, 'and pv:', pv)
+                aperture.append(max_value)
+                indices.append(sepindex)
+                pix_value.pop(max_index)
+                pix_pos.pop(max_index)
+                #print('new pixvalue:', len(pix_value), 'and max value:', max_value)
+                if len(bg_aperture) == 0:
+                    fileindex = str(k)
+                    #comb = np.vstack(aperture) # turn to 2d array
+                    f = open('Sources/source'+fileindex, 'x') # Create file to put data in
+                    np.savetxt(f, aperture)
+                    f.close()
+                    file = open('Index/index'+fileindex, 'x')
+                    np.savetxt(file, indices)
+                    file.close()
+                    bg = open('Sources/bg_aperture'+fileindex, 'x') # Create file to put data in
+                    np.savetxt(bg, bg_aperture)
+                    bg.close()
+                    gb= open('Index/bg_index'+fileindex, 'x')
+                    np.savetxt(gb, bg_indices)
+                    gb.close()
+                    for ind in range(len(indices)):
+                        pixind = pix_pos[ind]
+                        xpos = pixind[1]
+                        ypos = pixind[0]
+                        mask[ypos][xpos] = 0 # Change value in pixel position in mask to 0
+                else:
+                    continue
