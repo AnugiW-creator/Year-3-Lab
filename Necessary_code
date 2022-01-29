@@ -139,13 +139,23 @@ copy_pixvalue = pix_value
 copy_pixpos = pix_pos
 copy_mask = mask
 #%%
+
 '''
 NOTE: Indices are reversed:
     Takes form of [y, x]
 '''
-pix_value = copy_pixvalue
-pix_pos = copy_pixpos
-print(len(pix_value))
+#pepa = [2,4,1,5,7,3,4,6]
+#felix = [[2,0], [4,0], [1,0], [5,0], [7,0], [3,0], [4,0], [6,0]]
+pix_value, pix_pos = (list(t) for t in zip(*sorted(zip(pix_value, pix_pos), reverse=True)))
+#pix_value = copy_pixvalue
+#pix_pos = copy_pixpos
+max_value = max(pix_value)
+max_index = pix_value.index(max_value) # Find index 
+sepindex = pix_pos[max_index]
+print(max_value)
+print(max_index)
+print(pix_pos[max_index])
+print(sepindex[0])
 #%%
 ############# DEFINE CIRCLE AND ELLIPSE ############
 def Circle(x, y, x0, y0):
@@ -161,48 +171,57 @@ def Ellipse(x, y, x0, y0, a, b):
 ################## FIND SMALLEST SOURCES ###############
 sources = []
 for k in range(len(pix_value)):
-    #if k == len(pix_value):
-        #break
-    if pix_value[k] == max(pix_value):
-        max_value = pix_value[k]
-        max_index = pix_pos[k] # make sure index of value in loop matches brightest pixel
-        x0 = max_index[1] # Separate x and y coordinates
-        y0 = max_index[0]
-        r1 = 10.5 # Choose aperture radius from region file containing radius of brightest source
-        r2 = 16 # Choose bg aperture size
-        bg_aperture = []
-        aperture = []
-        bg_indices = []
-        indices = []
-        print('pixvalue:', len(pix_value))
-        for i in range(4611):
-            for j in range(2570):
-                impix = pixel[i][j]
-                maskpix = mask[i][j]
-                index = [i, j]
-                radius = Circle(j, i, x0, y0)
-                if radius > r1 and radius <= r2: # Check if pixel is within background aperture
-                    bg_aperture.append(impix)
-                    bg_indices.append(index)
-                elif radius <= r1:
-                    aperture.append(impix)
-                    indices.append(index)
-                    if index in pix_pos:
-                        pixvalue_index = pix_pos.index(index)
-                        pix_value.pop(pixvalue_index)
-                        pix_pos.pop(pixvalue_index)
+    print('yo')
+    k_index = pix_pos[k]
+    kx = k_index[1]
+    ky = k_index[0]
+    if mask[ky][kx] == 0:
+        print('yos')
+        continue
+    print('Ya maximum is:', max(pix_value))
+    #if pix_value[k] == max(pix_value):
+    max_value = pix_value[k]
+    max_index = pix_pos[k] # make sure index of value in loop matches brightest pixel
+    x0 = max_index[1] # Separate x and y coordinates
+    y0 = max_index[0]
+    r1 = 10.5 # Choose aperture radius from region file containing radius of brightest source
+    r2 = 16 # Choose bg aperture size
+    bg_aperture = []
+    aperture = []
+    bg_indices = []
+    indices = []
+    print('pixvalue:', len(pix_value))
+    for i in range(4611):
+        for j in range(2570):
+            impix = pixel[i][j]
+            maskpix = mask[i][j]
+            index = [i, j]
+            radius = Circle(j, i, x0, y0)
+            if radius > r1 and radius <= r2: # Check if pixel is within background aperture
+                bg_aperture.append(impix)
+                bg_indices.append(index)
+            elif radius <= r1:
+                aperture.append(impix)
+                indices.append(index)
+                mask[i][j] == 0
+                    #if index in pix_pos:
+                        #pixvalue_index = pix_pos.index(index)
+                        #pix_value.pop(pixvalue_index)
+                        #pix_pos.pop(pixvalue_index)
                         #print('new pixvalue:', len(pix_value), 'and pi:', pi, 'and pv:', pv)
-        fileindex = str(k)
-        f = open('Sources/source'+fileindex, 'x') # Create file to put data in
-        np.savetxt(f, aperture)
-        f.close()
-        file = open('Index/index'+fileindex, 'x')
-        np.savetxt(file, indices)
-        file.close()
-        bg = open('bg_aperture/bg_aperture'+fileindex, 'x') # Create file to put data in
-        np.savetxt(bg, bg_aperture)
-        bg.close()
-        gb= open('bg_index/bg_index'+fileindex, 'x')
-        np.savetxt(gb, bg_indices)
-        gb.close()
-print(max(pix_value))
+    print('yus')
+    fileindex = str(k)
+    f = open('Sources/source'+fileindex, 'x') # Create file to put data in
+    np.savetxt(f, aperture)
+    f.close()
+    file = open('Index/index'+fileindex, 'x')
+    np.savetxt(file, indices)
+    file.close()
+    bg = open('bg_aperture/bg_aperture'+fileindex, 'x') # Create file to put data in
+    np.savetxt(bg, bg_aperture)
+    bg.close()
+    gb= open('bg_index/bg_index'+fileindex, 'x')
+    np.savetxt(gb, bg_indices)
+    gb.close()
+    print('yeet')
+print('And the maximum pixel count is...', max(pix_value), '!')
