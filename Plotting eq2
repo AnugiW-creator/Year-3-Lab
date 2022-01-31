@@ -1,0 +1,124 @@
+
+from astropy.table import Table
+from astropy.io import fits
+import astropy.cosmology as cosmo
+from astropy.units import quantity
+import scipy as sp
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+finallist, x_coor, y_coor, magnitude, final_sum, sum_sources, num_sources, max_sources, median_bg, num_bg, max_bg, bgx_coor, bgy_coor = sp.loadtxt('catalog_1.txt', delimiter=',', unpack=True)
+
+#%%
+plt.plot(x_coor, y_coor, marker='x', linestyle = '', color='aqua')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.show()
+#%%
+################# CHECK IF MAGNITUDES ARE INVALID #############
+invalids = []
+for i in range(len(finallist)):
+    index = finallist[i]
+    mag = str(magnitude[i])
+    
+    if mag == 'nan':
+        print([x_coor[i],y_coor[i]])
+        print(index)
+        invalids.append(int(index))
+print(len(magnitude))  
+
+################ REMOVE DATA WITHIN INVALID REGIONS FROM MAGNITUDE LIST ################
+for k in range(len(finallist)):
+    xcoor = x_coor[k]
+    ycoor = y_coor[k]
+    x = 2489 + 1 # x and y coordinates of region drawn around area we want to remove
+    y = 1961 + 1
+    w = 63 # width and height of region we are removing
+    h = 58
+    x1 = x - w/2 # x and y edges (if box shaped region)
+    x2 = x + w/2
+    y1 = y - h/2
+    y2 = y + h/2
+    if x1 <= xcoor <= x2 and y1 <= ycoor <= y2:
+        print(magnitude[k])
+        print(finallist[k])
+        magnitude = np.delete(magnitude, k) # delete unwanted element from array
+print(len(magnitude))
+#%%
+################### PLOT HISTOGRAMS FOR SOURCE AND BG APERTURE OF INVALID SOURCES ###########
+for j in range(len(invalids)):
+    num = str(invalids[j])
+    source_file = sp.loadtxt('bg_aperture/bg_aperture'+num)
+    yamax = str(max(source_file))
+    plt.hist(source_file, bins=100)
+    plt.title('Plot count histogram bg_aperture'+num+' max pix='+yamax)
+    plt.savefig('Invalids/bg_plot'+num)
+    plt.show()
+
+for j in range(len(invalids)):
+    num = str(invalids[j])
+    source_file = sp.loadtxt('Sources/source'+num)
+    yamax = str(max(source_file))
+    plt.hist(source_file, bins=100)
+    plt.title('Plot count histogram source'+num+' max pix='+yamax)
+    plt.savefig('Invalids/source_plot'+num)
+    plt.show()
+#%%
+########################### PLOT NUMBER-MAGNITUDE RELATION ###################
+print(max(magnitude), 'is the maximum!')
+print(min(magnitude), 'is the minimum!')
+maglist = np.linspace(8, 17, num=10, endpoint=True) # Create magnitude list
+print(maglist)
+#%%
+number = [] # number of sources
+magmedian = [] # median of bin
+numbin = []
+error_t = []
+error_b = []
+for l in range(len(maglist)-1):
+    mag_bin = []
+    binend1 = maglist[l] # assign variables to either end of the bin
+    binend2 = maglist[l+1]
+    for q in range(len(magnitude)):
+        mag = magnitude[q]
+        if binend1 <= mag < binend2: # check if magnitude of source falls within bin
+            mag_bin.append(mag)
+    sum_mag = np.log10(len(mag_bin)) # number of sources in bin
+    binnum = len(mag_bin)
+    error = np.sqrt(len(mag_bin))/len(mag_bin)*binnum
+    error_top = np.log10(binnum + error)
+    error_t.append(error_top)
+    error_bottom = np.log10(binnum - error)
+    error_b.append(error_bottom)
+    number.append(sum_mag)
+    mmedian = (binend1 + binend2)/2 # find middle of bin
+    magmedian.append(mmedian)
+    numbin.append(binnum)
+
+error_lower = abs(np.asarray(number) - np.asarray(error_b)) #upper error
+error_upper = abs(np.asarray(number) - np.asarray(error_t)) #lower error    
+print('lower error:', error_lower)
+print('its length:', len(error_lower))
+print('length number:', number, 'and length:', len(number))
+fit, cov = sp.polyfit(magmedian[0:7], number[0:7], 1, w= error_lower[0:7], cov=True)
+print('fit coeffs:', fit)
+print('cov matrix:', cov)
+
+sig_0 = sp.sqrt(cov[0,0]) #The uncertainty in the slope
+sig_1 = sp.sqrt(cov[1,1]) #The uncertainty in the intercept
+
+print('Slope = %.3e +/- %.3e' %(fit[0],sig_0))# Note the %.3e forces the values to be printed in scientific notation with 3 decimal places.
+print('Intercept = %.3e +/- %.3e' %(fit[1],sig_1))
+
+polycule=sp.poly1d(fit)
+print('polynomial throuple:', polycule)
+
+plt.figure(figsize=(12,9))
+print(sum(numbin))
+plt.plot(magmedian, number, marker='x', mew=2, ms=14, color='deeppink', linestyle='')
+plt.errorbar(magmedian, number, yerr=(error_lower, error_upper), xerr=0.02, fmt='o', mew=2, ms=5, capsize=6, color='aquamarine')
+plt.plot(magmedian[0:7],polycule(magmedian[0:7]), color='gold', lw=2)
+plt.xlabel('Absolute magnitude', fontsize=17)
+plt.ylabel('Number of sources $\log10{N(m)}$', fontsize=17)
+plt.show()
