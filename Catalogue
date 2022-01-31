@@ -1,3 +1,19 @@
+from astropy.table import Table
+from astropy.io import fits
+import astropy.cosmology as cosmo
+from astropy.units import quantity
+import scipy as sp
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+hdulist = fits.open(r'C:\Users\anugi\OneDrive\Documents\Physics\Year 3\Labs\Astronomical Image Processing\A1_mosaic\A1_mosaic.fits')
+calibration = hdulist[0].header['MAGZPT']
+print(calibration)
+cal_error = hdulist[0].header['MAGZRR']
+print(cal_error)
+#%%
+
 sum_sources = [] #sum of pixel values of sources
 num_sources = [] #number of pixels present in source file
 max_sources = [] #value of maximum pixel in the source file
@@ -9,8 +25,10 @@ median_bg = [] #median pixel value in the background pixel file
 num_bg = [] #number of pixels present in background file
 bgx_coor = [] #x coordinate of the maximum pixel in the bg file
 bgy_coor = [] #y coordinate of the maximum pixel in the bg file
+source_flux = [] #flux solely due to object
+magnitude = [] #calibrated magnitudes
 
-#%%
+
 import os.path
 emptylist = [] #a list of path+filenames
 finallist = [] #empty list for the file[num] exist
@@ -25,7 +43,7 @@ for i in range(len(emptylist)):
     print(file_exist)
     if file_exist == True:
         finallist.append(i)
-#%%
+
 for file in range(len(finallist)):
     num = str(finallist[file])
     source_file = np.loadtxt('Sources\source'+num)
@@ -34,6 +52,7 @@ for file in range(len(finallist)):
     
     print('sum of the sources pixels =', sum(source_file)) # check for value appended is correct
     sum_sources.append(sum(source_file)) #append to a list
+    
     
     print('number of pixels present = ', len(source_file)) #just to double check the area of aperture
     num_sources.append(len(source_file))
@@ -75,21 +94,33 @@ for file in range(len(finallist)):
     median = np.median(bg_file) #local background median
     print('background median',[num],'=', median)
     median_bg.append(median) 
+    
+
    
     #plt.hist(bg_file, bins=400)
     #plt.title('Plot count histogram background'+num)
     #plt.savefig('background histogram\plot'+num)
     #plt.show()
-#%%
+
 final_sum = [] # for the counts of pixels - local background
 for i in range (len(sum_sources)):
     background = median_bg[i] # local background pixel
     num_pix = num_sources[i] #number of pixel present in the source
-    new_sum = sum_sources[i] - num_pix*background
-    final_sum.append(new_sum)
+    new_sum = sum_sources[i] - num_pix*background    
     
-data = np.array([x_coor, y_coor, final_sum, sum_sources, num_sources, max_sources, median_bg, num_bg, max_bg, bgx_coor, bgy_coor])
+    print('total flux of source:', new_sum)
+
+    mag = calibration - 2.5*np.log10(new_sum) # magnitude of source
+    print('calibrated magnitude of source:', mag)    
+    magnitude.append(mag)
+
+    
+    final_sum.append(new_sum)
+#%%
+print(finallist)
+data = np.array([finallist, x_coor, y_coor, magnitude, final_sum, sum_sources, num_sources, max_sources, median_bg, num_bg, max_bg, bgx_coor, bgy_coor])
 
 data = data.T
 
+print(data)
 np.savetxt('catalog_1.txt', data, delimiter = ',')
