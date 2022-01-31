@@ -1,0 +1,95 @@
+sum_sources = [] #sum of pixel values of sources
+num_sources = [] #number of pixels present in source file
+max_sources = [] #value of maximum pixel in the source file
+x_coor = [] #x coordinate of the maximum pixel in the source file
+y_coor = [] #y coordinate of the maximum pixel in the source file
+
+max_bg = [] #maximum pixel value in the background pixel file
+median_bg = [] #median pixel value in the background pixel file
+num_bg = [] #number of pixels present in background file
+bgx_coor = [] #x coordinate of the maximum pixel in the bg file
+bgy_coor = [] #y coordinate of the maximum pixel in the bg file
+
+#%%
+import os.path
+emptylist = [] #a list of path+filenames
+finallist = [] #empty list for the file[num] exist
+for j in range(112956):
+    num = str(j)
+    lel = 'Sources\source'+ num
+    emptylist.append(lel)
+    
+for i in range(len(emptylist)):
+    emp = emptylist[i]
+    file_exist = os.path.exists(emp)
+    print(file_exist)
+    if file_exist == True:
+        finallist.append(i)
+#%%
+for file in range(len(finallist)):
+    num = str(finallist[file])
+    source_file = np.loadtxt('Sources\source'+num)
+    index_y, index_x = np.loadtxt('Index\index'+num, delimiter = ' ', unpack = True)
+    source_file = source_file.tolist() #change array to a list to get the index of maximum value
+    
+    print('sum of the sources pixels =', sum(source_file)) # check for value appended is correct
+    sum_sources.append(sum(source_file)) #append to a list
+    
+    print('number of pixels present = ', len(source_file)) #just to double check the area of aperture
+    num_sources.append(len(source_file))
+    
+    print('maximum pixel value = ', max(source_file)) 
+    maximum = max(source_file)
+    max_sources.append(maximum)
+    index_max = source_file.index(maximum)
+    #print(index_max)
+    print('x_coor=', index_x[index_max]) #check for correct coordinate appended
+    print('y_coor=', index_y[index_max])
+    x_coor.append(index_x[index_max])
+    y_coor.append(index_y[index_max])
+    
+    #plt.hist(source_file, bins=400)
+    #plt.title('Plot count histogram source'+num)
+    #plt.savefig('histogram\plot'+num)
+    #plt.show()
+    
+#for file in range(len(first)):
+    #num = str(first[file])
+    bg_file = sp.loadtxt(r'C:\Users\anugi\OneDrive\Documents\Physics\Year 3\Labs\Astronomical Image Processing\bg_aperture\bg_aperture'+num)
+    bgindex_y, bgindex_x = sp.loadtxt(r'C:\Users\anugi\OneDrive\Documents\Physics\Year 3\Labs\Astronomical Image Processing\bg_index\bg_index'+num, delimiter = ' ', unpack = True)
+    bg_file = bg_file.tolist()
+    
+    print('number of pixels present = ', len(bg_file)) #just to double check the area of aperture
+    num_bg.append(len(bg_file))
+    
+    print('maximum background=' , max(bg_file)) #check for the value appended
+    bg_maximum = max(bg_file)
+    max_bg.append(bg_maximum)
+    bgindex_max = bg_file.index(bg_maximum)
+    
+    print('x_coor=', bgindex_x[bgindex_max]) #check for correct coordinate appended
+    print('y_coor=', bgindex_y[bgindex_max])
+    bgx_coor.append(bgindex_x[bgindex_max])
+    bgy_coor.append(bgindex_y[bgindex_max])
+    
+    median = np.median(bg_file) #local background median
+    print('background median',[num],'=', median)
+    median_bg.append(median) 
+   
+    #plt.hist(bg_file, bins=400)
+    #plt.title('Plot count histogram background'+num)
+    #plt.savefig('background histogram\plot'+num)
+    #plt.show()
+#%%
+final_sum = [] # for the counts of pixels - local background
+for i in range (len(sum_sources)):
+    background = median_bg[i] # local background pixel
+    num_pix = num_sources[i] #number of pixel present in the source
+    new_sum = sum_sources[i] - num_pix*background
+    final_sum.append(new_sum)
+    
+data = np.array([x_coor, y_coor, final_sum, sum_sources, num_sources, max_sources, median_bg, num_bg, max_bg, bgx_coor, bgy_coor])
+
+data = data.T
+
+np.savetxt('catalog_1.txt', data, delimiter = ',')
