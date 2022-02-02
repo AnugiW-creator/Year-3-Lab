@@ -1,0 +1,28 @@
+
+from PIL import Image
+lmao = 13282.0
+for r in range(len(finallist)):
+    if finallist[r] == lmao:
+        print([x_coor[r], y_coor[r]])
+        antonio = max_sources[r]
+        print(max_sources[r])
+        for s in range(len(finallist1)):
+            if s == len(finallist):
+                break
+            if max_sources1[s] == antonio:
+                print('small aperture index:',finallist1[s],'and coords:', [x_coor1[s], y_coor1[s]])
+                yu = str(int(finallist1[s]))
+        
+        lu = str(int(lmao))
+        bghist = "bg_histograms_la/bg_figure"+lu+".png"
+        schist = "histograms_la/source_figure"+lu+".png"
+        bghist2 = r"C:\My Documents\Physics\Year 3\Lab\Astronomical Image Processing\background histogram\background histogram\plot"+yu+".png"
+        schist2 = r"C:\My Documents\Physics\Year 3\Lab\Astronomical Image Processing\histogram\histogram\plot"+yu+".png"
+        imbg = Image.open(bghist)
+        imbg.show()
+        scim = Image.open(schist)
+        scim.show()
+        imbg2 = Image.open(bghist2)
+        imbg2.show()
+        scim2 = Image.open(schist2)
+        scim2.show()
