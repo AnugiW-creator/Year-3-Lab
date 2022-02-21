@@ -15,3 +15,7 @@ This is coding for Year 3 lab.
         image_processing.py
         Histogram plotting.
         Necessary_code provides clean code need to identify potential galaxies, image_processing.py includes Gaussian plots used to determine background and Identifying sources and New_Identifying_sources only contain algorithm identifying clusters of pixels that could be sources. Histogram plotting includes only the code used to plot histograms of the pixel count for each suspected source.
+
+## Solar Radiation
+        Uses solar flux to calculate albedo of different surfaces, cloud depth and optical depth.
+        Files associated with this cycle are:
