@@ -19,3 +19,8 @@ This is coding for Year 3 lab.
 ## Solar Radiation
         Uses solar flux to calculate albedo of different surfaces, cloud depth and optical depth.
         Files associated with this cycle are:
+
+## Radiation laws
+        Calculating Planck's constant using a tungsten filament, various filters and light detectors.
+        Files associated with this cycle are:
+        
